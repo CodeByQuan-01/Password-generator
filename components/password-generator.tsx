@@ -1,21 +1,23 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shuffle } from 'lucide-react'
+import { Shuffle, Copy } from 'lucide-react'
+import { useToast } from "@/hooks/use-toast"
+// import { useToast } from "@/components/ui/use-toast"
 
 export function PasswordGenerator() {
   const [type, setType] = useState("random")
-  const [length, setLength] = useState(20)
+  const [length, setLength] = useState(22)
   const [includeNumbers, setIncludeNumbers] = useState(true)
   const [includeSymbols, setIncludeSymbols] = useState(false)
   const [password, setPassword] = useState("")
-  const passwordRef = useRef<HTMLDivElement>(null)
+  const { toast } = useToast()
 
   const generatePassword = () => {
     let charset = ""
@@ -47,6 +49,10 @@ export function PasswordGenerator() {
     }
 
     setPassword(result)
+    toast({
+      title: "Password Generated",
+      description: "New password is ready.",
+    })
   }
 
   useEffect(() => {
@@ -54,37 +60,89 @@ export function PasswordGenerator() {
   }, [length, includeNumbers, includeSymbols, type])
 
   const copyPassword = async () => {
-    if (passwordRef.current) {
-      await navigator.clipboard.writeText(passwordRef.current.textContent || '')
+    if (!navigator.clipboard && !window.isSecureContext) {
+      // Fallback for non-secure contexts or when Clipboard API is not available
+      const textArea = document.createElement("textarea");
+      textArea.value = password;
+      textArea.style.position = "fixed";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        toast({
+          title: "Copied",
+          description: "Password copied to clipboard.",
+        });
+      } catch (err) {
+        console.error("Fallback: Oops, unable to copy", err);
+        toast({
+          title: "Error",
+          description: "Failed to copy password. Please try again.",
+          variant: "destructive",
+        });
+      }
+      document.body.removeChild(textArea);
+    } else {
+      // Use Clipboard API
+      try {
+        await navigator.clipboard.writeText(password);
+        toast({
+          title: "Copied",
+          description: "Password copied to clipboard.",
+        });
+      } catch (err) {
+        console.error("Failed to copy: ", err);
+        toast({
+          title: "Error",
+          description: "Failed to copy password. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
-  }
+  };
 
   return (
-    <div className="bg-gray-100 dark:bg-gray-900 py-8 md:py-12">
-      <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center max-w-6xl mx-auto px-4">
-        <div className="w-full lg:w-1/2 space-y-4 md:space-y-6 text-center lg:text-left">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-semibold text-gray-800 dark:text-white leading-tight">
+    <div className="flex flex-col lg:flex-row items-start justify-between max-w-6xl mx-auto px-4 gap-8 lg:gap-12">
+      {/* Desktop heading - hidden on mobile */}
+      <div className="hidden lg:block lg:w-1/2 space-y-6">
+        <h1 className="text-5xl font-semibold text-gray-800 dark:text-white leading-tight">
+          Strong. Secure. Awesome. Try our random password generator.
+        </h1>
+        <p className="text-xl text-gray-600 dark:text-gray-300">
+          A powerful generator for powerful passwords to protect your online accounts.
+        </p>
+      </div>
+
+      {/* Main content - full width on mobile, half width on desktop */}
+      <div className="w-full lg:w-1/2">
+        {/* Mobile heading - hidden on desktop */}
+        <div className="block lg:hidden mb-6 space-y-4">
+          <h1 className="text-3xl font-semibold text-gray-800 dark:text-white leading-tight">
             Strong. Secure. Awesome. Try our random password generator.
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 dark:text-white/80">
+          <p className="text-lg text-gray-600 dark:text-gray-300">
             A powerful generator for powerful passwords to protect your online accounts.
           </p>
         </div>
-        <Card className="w-full lg:w-1/2 bg-white dark:bg-gray-800 shadow-xl border border-gray-200 dark:border-gray-700 max-w-md mx-auto">
-          <CardContent className="p-4 md:p-6 space-y-4 md:space-y-6">
-            <div className="space-y-2 md:space-y-4">
-              <Label className="text-base md:text-lg text-gray-700 dark:text-gray-200">Choose password type</Label>
-              <Tabs defaultValue="random" value={type} onValueChange={setType}>
-                <TabsList className="grid grid-cols-3">
-                  <TabsTrigger value="random">
+
+        <Card className="bg-white dark:bg-gray-700 p-6 rounded-xl shadow-lg">
+          <div className="space-y-6">
+            <div>
+              <Label className="text-base font-medium text-gray-800 dark:text-white mb-3 block">
+                Choose password type
+              </Label>
+              <Tabs defaultValue="random" value={type} onValueChange={setType} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 p-1 h-11 bg-gray-100 dark:bg-gray-600 rounded-lg">
+                  <TabsTrigger value="random" className="rounded-md data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">
                     <span className="mr-2">⚡</span>
                     Random
                   </TabsTrigger>
-                  <TabsTrigger value="memorable">
+                  <TabsTrigger value="memorable" className="rounded-md data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">
                     <span className="mr-2">🎯</span>
                     Memorable
                   </TabsTrigger>
-                  <TabsTrigger value="pin">
+                  <TabsTrigger value="pin" className="rounded-md data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800">
                     <span className="mr-2">#</span>
                     PIN
                   </TabsTrigger>
@@ -92,11 +150,13 @@ export function PasswordGenerator() {
               </Tabs>
             </div>
 
-            <div className="space-y-2 md:space-y-4">
-              <Label className="text-base md:text-lg text-gray-700 dark:text-gray-200">Customize your new password</Label>
-              <div className="space-y-4 md:space-y-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
+            <div>
+              <Label className="text-base font-medium text-gray-800 dark:text-white mb-3 block">
+                Customize your new password
+              </Label>
+              <div className="space-y-6">
+                <div>
+                  <div className="flex justify-between mb-2 text-gray-600 dark:text-gray-300">
                     <span>Characters</span>
                     <span>{length}</span>
                   </div>
@@ -106,14 +166,14 @@ export function PasswordGenerator() {
                     max={50}
                     min={8}
                     step={1}
-                    className="[&_[role=slider]]:h-5 [&_[role=slider]]:w-5"
+                    className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
                   />
                 </div>
 
                 {type === "random" && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="numbers" className="text-gray-700 dark:text-gray-200">Numbers</Label>
+                      <Label htmlFor="numbers" className="text-gray-600 dark:text-gray-300">Numbers</Label>
                       <Switch
                         id="numbers"
                         checked={includeNumbers}
@@ -121,7 +181,7 @@ export function PasswordGenerator() {
                       />
                     </div>
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="symbols" className="text-gray-700 dark:text-gray-200">Symbols</Label>
+                      <Label htmlFor="symbols" className="text-gray-600 dark:text-gray-300">Symbols</Label>
                       <Switch
                         id="symbols"
                         checked={includeSymbols}
@@ -133,22 +193,32 @@ export function PasswordGenerator() {
               </div>
             </div>
 
-            <div className="space-y-2 md:space-y-4">
-              <Label className="text-base md:text-lg text-gray-700 dark:text-gray-200">Generated password</Label>
-              <div ref={passwordRef} className="p-3 md:p-4 border border-gray-300 dark:border-gray-600 rounded-lg text-center text-base md:text-xl font-mono break-all bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white">
+            <div>
+              <Label className="text-base font-medium text-gray-800 dark:text-white mb-3 block">
+                Generated password
+              </Label>
+              <div className="p-4 border dark:border-gray-600 rounded-lg text-center text-lg font-mono bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white break-all">
                 {password}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 md:py-3" onClick={copyPassword}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <Button 
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
+                  onClick={copyPassword}
+                >
+                  <Copy className="mr-2 h-4 w-4" />
                   Copy password
                 </Button>
-                <Button variant="outline" className="w-full border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white py-2 md:py-3" onClick={generatePassword}>
+                <Button 
+                  variant="outline" 
+                  className="w-full border-2 dark:border-gray-600 dark:text-white" 
+                  onClick={generatePassword}
+                >
                   <Shuffle className="mr-2 h-4 w-4" />
                   Refresh password
                 </Button>
               </div>
             </div>
-          </CardContent>
+          </div>
         </Card>
       </div>
     </div>

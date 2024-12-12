@@ -1,17 +1,19 @@
 import { SiteHeader } from "@/components/site-header"
 import { PasswordGenerator } from "@/components/password-generator"
-import { ThemeProvider } from "@/components/theme-provider"
+import { CustomToaster } from "@/components/ui/custom-toaster"
+import { SiteFooter } from "@/components/site-footer"
+// import { SiteFooter } from "@/components/site-footer"
 
 export default function Home() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-        <SiteHeader />
-        <main className="container py-12 lg:py-24">
-          <PasswordGenerator />
-        </main>
-      </div>
-    </ThemeProvider>
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+      <SiteHeader />
+      <main className="container py-6 lg:py-12">
+        <PasswordGenerator />
+      </main>
+      <SiteFooter />
+      <CustomToaster />
+    </div>
   )
 }
 
